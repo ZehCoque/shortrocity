@@ -7,8 +7,8 @@ import sys
 import os
 
 import narration
-import images
 import video
+import photoroom_api
 
 client = OpenAI()
 
@@ -33,27 +33,21 @@ response = client.chat.completions.create(
     messages=[
         {
             "role": "system",
-            "content": """You are a YouTube short narration generator. You generate 30 seconds to 1 minute of narration. The shorts you create have a background that fades from image to image as the narration is going on.
+            "content": """You are a YouTube short narration generator. You generate 30 seconds to 1 minute of narration. The shorts you create have an image of a product that will be used to comercialize this product.
 
-You will need to generate descriptions of images for each of the sentences in the short. They will be passed to an AI image generator. DO NOT IN ANY CIRCUMSTANCES use names of celebrities or people in the image descriptions. It is illegal to generate images of celebrities. Only describe persons without their names. Do not reference any real person or group in the image descriptions. Don't mention the female figure or other sexual content in the images because they are not allowed.
+Create a narration thinking about selling the product, using excited intonations and convincing the buyer that they need our product. Create a narration DO NOT IN ANY CIRCUMSTANCES use names of celebrities or people.
 
-You are however allowed to use any content, including real names in the narration. Only image descriptions are restricted.
+You are however allowed to use any content, including real names in the narration.
 
 Note that the narration will be fed into a text-to-speech engine, so don't use special characters.
 
-Respond with a pair of an image description in square brackets and a narration below it. Both of them should be on their own lines, as follows:
+Respond with the narration on the format that follows:
 
 ###
 
-[Description of a background image]
-
 Narrator: "One sentence of narration"
 
-[Description of a background image]
-
 Narrator: "One sentence of narration"
-
-[Description of a background image]
 
 Narrator: "One sentence of narration"
 
@@ -61,7 +55,6 @@ Narrator: "One sentence of narration"
 
 The short should be 6 sentences maximum.
 
-You should add a description of a fitting backround image in between all of the narrations. It will later be used to generate an image with AI.
 """
         },
         {
@@ -84,8 +77,8 @@ with open(os.path.join(basedir, "data.json"), "w") as f:
 print(f"Generating narration...")
 narration.create(data, os.path.join(basedir, "narrations"))
 
-print("Generating images...")
-images.create_from_data(data, os.path.join(basedir, "images"))
+print(f"Generating Image...")
+photoroom_api.bg_generate('https://aurelsg.com/cdn/shop/articles/macerating-your-fragrances.jpg?v=1659022374', os.path.join(basedir, "image"), 'An glass table with a mountain view in the background with an sunset')
 
 print("Generating video...")
 video.create(narrations, basedir, output_file)
