@@ -21,12 +21,6 @@ def parse(narration):
                 "content": text.strip('"'),
             })
             narrations.append(text.strip('"'))
-        elif line.startswith('['):
-            background = line.strip('[]')
-            data.append({
-                "type": "image",
-                "description": background,
-            })
     return data, narrations
 
 def create(data, output_folder):

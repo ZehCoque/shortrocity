@@ -1,6 +1,7 @@
 __pycache__/
 old/
 shorts/
+removeBg/
 *.txt
 !response.txt
 !requirements.txt

@@ -19,6 +19,8 @@ if len(sys.argv) < 2:
 with open(sys.argv[1]) as f:
     source_material = f.read()
 
+imageDir = os.path.join("removeBg")
+
 short_id = str(int(time.time()))
 output_file = "short.avi"
 
@@ -77,8 +79,11 @@ with open(os.path.join(basedir, "data.json"), "w") as f:
 print(f"Generating narration...")
 narration.create(data, os.path.join(basedir, "narrations"))
 
+print(f"Removing background...")
+output_image_path, filename = photoroom_api.bg_remove(os.path.join("removeBg", "input.png"))
+
 print(f"Generating Image...")
-photoroom_api.bg_generate('https://aurelsg.com/cdn/shop/articles/macerating-your-fragrances.jpg?v=1659022374', os.path.join(basedir, "image"), 'An glass table with a mountain view in the background with an sunset')
+photoroom_api.bg_generate(os.path.join(basedir, "image"), 'An glass table with a mountain view in the background with an sunset', output_image_path, filename)
 
 print("Generating video...")
 video.create(narrations, basedir, output_file)

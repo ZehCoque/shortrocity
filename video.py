@@ -9,7 +9,7 @@ import text
 def get_audio_duration(audio_file):
     return len(AudioSegment.from_file(audio_file))
 
-def resize_image(image, width, height, padding=150):
+def resize_image(image, width, height, padding=250):
     image_with_border = cv2.copyMakeBorder(image, padding, padding, padding, padding, cv2.BORDER_CONSTANT, value=[0, 0, 0])
 
     # Calculate the aspect ratio of the original image

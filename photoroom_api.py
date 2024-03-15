@@ -1,54 +1,61 @@
 from PIL import Image
 from bs4 import BeautifulSoup
 import http.client
-import urllib.parse
+import uuid
 import io
 import os
 import mimetypes
-import base64
 
-# def bg_remove():
-#   conn = http.client.HTTPSConnection("sdk.photoroom.com")
+def resize_image(image, width, height):
+    aspect_ratio = image.width / image.height
+    new_height = height
+    new_width = int(new_height * aspect_ratio)
 
-#   image_path = "./removeBg/input.png"
+    resized_image = image.resize((new_width, new_height))
 
-#   mime_type = mimetypes.guess_type(image_path)[0]
+    return resized_image
 
-#   with open(image_path, "rb") as image_file:
-#       image_data = image_file.read()
+def bg_remove(path_to_file):
+  conn = http.client.HTTPSConnection("sdk.photoroom.com")
+
+  image_path = path_to_file
+
+  mime_type = mimetypes.guess_type(image_path)[0]
+
+  with open(image_path, "rb") as image_file:
+      image_data = image_file.read()
   
+  boundary = '---011000010111000001101001'
+  payload = f"--{boundary}\r\nContent-Disposition: form-data; name=\"image_file\"; filename=\"input.png\"\r\nContent-Type: {mime_type}\r\n\r\n"
+  payload = payload.encode() + image_data + f"\r\n--{boundary}--\r\n".encode()
 
-#   image_data_base64 = base64.b64encode(image_data).decode()
+  headers = {
+    'Content-Type': "multipart/form-data; boundary=---011000010111000001101001",
+    'Accept': "image/png, application/json",
+    'x-api-key': os.getenv("PHOTOROOM_API_KEY")
+  }
 
-#   payload = f"""
-#   -----011000010111000001101001
-#   Content-Disposition: form-data; name="image_file"
+  conn.request('POST', '/v1/segment', payload, headers)
 
-#   {image_data_base64}
-#   -----011000010111000001101001--
-#   """
+  res = conn.getresponse()
+  data = res.read()
 
-#   headers = {
-#     'Content-Type': "multipart/form-data; boundary=---011000010111000001101001",
-#     'Accept': "image/png, application/json",
-#     'x-api-key': os.getenv("PHOTOROOM_API_KEY")
-#   }
+  randomId = uuid.uuid4()
 
-#   conn.request('POST', '/v1/segment', payload, headers)
+  filename = f'output_{randomId}.png'
+  output_image_path = f'./removeBg/output_{randomId}.png'
+  print(f"Status: {res.status}, Code: {res.getcode()}, Reason: {res.reason}")
+  if 'image' in res.getheader('Content-Type'):
+      image = Image.open(io.BytesIO(data))
 
-#   res = conn.getresponse()
-#   data = res.read()
+      resized_image = resize_image(image, 3840, 2160)
+      resized_image.save(f'./removeBg/output_{randomId}.png')
+  else:
+     print('The response is not an image.')
 
-#   print(f"Status: {res.status}, Code: {res.getcode()}, Reason: {res.reason}, Data: {data}")
-#   if 'image' in res.getheader('Content-Type'):
-#       image = Image.open(io.BytesIO(data))
-#       image.save('./removeBg/output.png')
-#   else:
-#      print('The response is not an image.')
-
+  return output_image_path, filename
    
-
-def bg_generate(imageUrl, output_dir, prompt):
+def bg_generate(output_dir, prompt, input_image_path, filename):
   if not os.path.exists(output_dir):
         os.makedirs(output_dir)
 
@@ -56,21 +63,22 @@ def bg_generate(imageUrl, output_dir, prompt):
 
   conn = http.client.HTTPSConnection("beta-sdk.photoroom.com")
 
-  param = {
-    'imageUrl': imageUrl,
-    'prompt': prompt,
-    'apiKey': os.getenv("PHOTOROOM_API_KEY")
-  }
+  mime_type = mimetypes.guess_type(input_image_path)[0]
 
-  params_encoded = urllib.parse.urlencode(param)
+  with open(input_image_path, "rb") as image_file:
+      image_data = image_file.read()
+
+  boundary = '---011000010111000001101001'
+  payload = f"-----011000010111000001101001\r\nContent-Disposition: form-data; name=\"prompt\"\r\n\r\n{prompt}\r\n-----011000010111000001101001\r\nContent-Disposition: form-data; name=\"imageFile\"; filename=\"{filename}\"\r\nContent-Type: image/png\r\n\r\n"
+  payload = payload.encode() + image_data + f"\r\n--{boundary}--\r\n".encode()
 
   headers = {
+    'Content-Type': 'multipart/form-data; boundary=---011000010111000001101001',
     'Accept': "image/png, application/json",
     'x-api-key': os.getenv("PHOTOROOM_API_KEY"),
-    'Content-Type': 'application/json'
   }
 
-  conn.request("GET", f"/v1/instant-backgrounds?{params_encoded}", headers=headers)
+  conn.request("POST", "/v1/instant-backgrounds", payload, headers)
 
   res = conn.getresponse()
   data = res.read()
@@ -81,3 +89,4 @@ def bg_generate(imageUrl, output_dir, prompt):
       image.save(image_path)
   else:
       print('The response is not an image.')
+     
